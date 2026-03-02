@@ -155,9 +155,18 @@ setup_directories() {
 setup_repository() {
     log_info "Thiết lập repository..."
     
+    # Nếu thư mục tồn tại nhưng không phải git repo, xóa nó
+    if [[ -d "$INSTALL_DIR" && ! -d "$INSTALL_DIR/.git" ]]; then
+        log_info "Xóa thư mục bị hỏng..."
+        rm -rf "$INSTALL_DIR" 2>/dev/null || true
+    fi
+    
     if [[ ! -d "$INSTALL_DIR" ]]; then
         log_info "Đang sao chép OpenClaw..."
-        git clone "$REPO_URL" "$INSTALL_DIR" 2>&1 | tail -3 || true
+        if ! git clone "$REPO_URL" "$INSTALL_DIR" 2>&1 | tail -3; then
+            log_error "Clone thất bại - kiểm tra kết nối mạng"
+            exit 1
+        fi
     else
         log_info "Đang cập nhật OpenClaw..."
         cd "$INSTALL_DIR"
@@ -171,6 +180,12 @@ setup_repository() {
 # Cài đặt dependencies dự án
 install_project_deps() {
     log_info "Đang cài đặt dependencies dự án..."
+    
+    if [[ ! -f "$INSTALL_DIR/package.json" ]]; then
+        log_error "Không tìm thấy package.json"
+        exit 1
+    fi
+    
     cd "$INSTALL_DIR"
     
     if [[ -f "pnpm-lock.yaml" ]]; then
@@ -179,10 +194,16 @@ install_project_deps() {
             npm install -g pnpm@10 >/dev/null 2>&1
         fi
         log_info "Đang chạy pnpm install..."
-        pnpm install --frozen-lockfile 2>&1 | tail -5 || true
+        if ! pnpm install --frozen-lockfile 2>&1 | tail -5; then
+            log_error "Install thất bại"
+            exit 1
+        fi
     else
         log_info "Đang chạy npm install..."
-        npm install --omit=dev 2>&1 | tail -5 || true
+        if ! npm install --omit=dev 2>&1 | tail -5; then
+            log_error "Install thất bại"
+            exit 1
+        fi
     fi
     
     log_success "Dependencies đã được cài đặt"
@@ -193,10 +214,21 @@ build_project() {
     log_info "Đang xây dựng OpenClaw..."
     cd "$INSTALL_DIR"
     
+    if [[ ! -f "package.json" ]]; then
+        log_error "Không tìm thấy package.json"
+        exit 1
+    fi
+    
     if [[ -f "pnpm-lock.yaml" ]]; then
-        pnpm build 2>&1 | tail -10 || true
+        if ! pnpm build 2>&1 | tail -10; then
+            log_error "Build thất bại"
+            exit 1
+        fi
     else
-        npm run build 2>&1 | tail -10 || true
+        if ! npm run build 2>&1 | tail -10; then
+            log_error "Build thất bại"
+            exit 1
+        fi
     fi
     
     if [[ ! -f "dist/entry.js" ]]; then
@@ -226,6 +258,11 @@ test_installation() {
     log_info "Đang kiểm tra cài đặt..."
     
     export PATH="$BIN_DIR:$PATH"
+    
+    if [[ ! -f "$BIN_DIR/openclaw" ]]; then
+        log_error "Binary openclaw không được tìm thấy"
+        return 1
+    fi
     
     if "$BIN_DIR/openclaw" --version >/dev/null 2>&1; then
         local version=$("$BIN_DIR/openclaw" --version 2>/dev/null || echo "unknown")
