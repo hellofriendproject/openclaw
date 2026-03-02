@@ -52,7 +52,7 @@ function defineDockCommand(dock: ChannelDock): ChatCommandDefinition {
   return defineChatCommand({
     key: `dock:${dock.id}`,
     nativeName: `dock_${dock.id}`,
-    description: `Switch to ${dock.id} for replies.`,
+    description: `Chuyển đến ${dock.id} để trả lời.`,
     textAliases: [`/dock-${dock.id}`, `/dock_${dock.id}`],
     category: "docks",
   });
@@ -133,21 +133,21 @@ function buildChatCommands(): ChatCommandDefinition[] {
     defineChatCommand({
       key: "help",
       nativeName: "help",
-      description: "Show available commands.",
+      description: "Hiển thị các lệnh có sẵn.",
       textAlias: "/help",
       category: "status",
     }),
     defineChatCommand({
       key: "commands",
       nativeName: "commands",
-      description: "List all slash commands.",
+      description: "Liệt kê tất cả các lệnh slash.",
       textAlias: "/commands",
       category: "status",
     }),
     defineChatCommand({
       key: "skill",
       nativeName: "skill",
-      description: "Run a skill by name.",
+      description: "Chạy một kỹ năng theo tên.",
       textAlias: "/skill",
       category: "tools",
       args: [
@@ -168,13 +168,13 @@ function buildChatCommands(): ChatCommandDefinition[] {
     defineChatCommand({
       key: "status",
       nativeName: "status",
-      description: "Show current status.",
+      description: "Hiển thị trạng thái hiện tại.",
       textAlias: "/status",
       category: "status",
     }),
     defineChatCommand({
       key: "allowlist",
-      description: "List/add/remove allowlist entries.",
+      description: "Liệt kê/thêm/xóa các mục danh sách cho phép.",
       textAlias: "/allowlist",
       acceptsArgs: true,
       scope: "text",
@@ -183,7 +183,7 @@ function buildChatCommands(): ChatCommandDefinition[] {
     defineChatCommand({
       key: "approve",
       nativeName: "approve",
-      description: "Approve or deny exec requests.",
+      description: "Phê duyệt hoặc từ chối các yêu cầu thực thi.",
       textAlias: "/approve",
       acceptsArgs: true,
       category: "management",
@@ -191,7 +191,7 @@ function buildChatCommands(): ChatCommandDefinition[] {
     defineChatCommand({
       key: "context",
       nativeName: "context",
-      description: "Explain how context is built and used.",
+      description: "Giải thích cách ngữ cảnh được xây dựng và sử dụng.",
       textAlias: "/context",
       acceptsArgs: true,
       category: "status",
@@ -199,7 +199,7 @@ function buildChatCommands(): ChatCommandDefinition[] {
     defineChatCommand({
       key: "export-session",
       nativeName: "export-session",
-      description: "Export current session to HTML file with full system prompt.",
+      description: "Xuất phiên làm việc hiện tại sang tệp HTML với đầy đủ lời nhắc hệ thống.",
       textAliases: ["/export-session", "/export"],
       acceptsArgs: true,
       category: "status",
@@ -215,7 +215,7 @@ function buildChatCommands(): ChatCommandDefinition[] {
     defineChatCommand({
       key: "tts",
       nativeName: "tts",
-      description: "Control text-to-speech (TTS).",
+      description: "Kiểm soát chuyển văn bản thành giọng nói (TTS).",
       textAlias: "/tts",
       category: "media",
       args: [
@@ -258,14 +258,14 @@ function buildChatCommands(): ChatCommandDefinition[] {
     defineChatCommand({
       key: "whoami",
       nativeName: "whoami",
-      description: "Show your sender id.",
+      description: "Hiển thị ID người gửi của bạn.",
       textAlias: "/whoami",
       category: "status",
     }),
     defineChatCommand({
       key: "session",
       nativeName: "session",
-      description: "Manage session-level settings (for example /session idle).",
+      description: "Quản lý cài đặt cấp phiên (ví dụ /session idle).",
       textAlias: "/session",
       category: "session",
       args: [
@@ -287,7 +287,7 @@ function buildChatCommands(): ChatCommandDefinition[] {
     defineChatCommand({
       key: "subagents",
       nativeName: "subagents",
-      description: "List, kill, log, spawn, or steer subagent runs for this session.",
+      description: "Liệt kê, dừng, ghi nhật ký, tạo hoặc điều hướng các lần chạy tác nhân phụ cho phiên này.",
       textAlias: "/subagents",
       category: "management",
       args: [
@@ -314,7 +314,7 @@ function buildChatCommands(): ChatCommandDefinition[] {
     defineChatCommand({
       key: "acp",
       nativeName: "acp",
-      description: "Manage ACP sessions and runtime options.",
+      description: "Quản lý các phiên ACP và các tùy chọn thời gian chạy.",
       textAlias: "/acp",
       category: "management",
       args: [
@@ -353,7 +353,7 @@ function buildChatCommands(): ChatCommandDefinition[] {
     defineChatCommand({
       key: "focus",
       nativeName: "focus",
-      description: "Bind this Discord thread (or a new one) to a session target.",
+      description: "Liên kết luồng Discord này (hoặc luồng mới) với mục tiêu phiên.",
       textAlias: "/focus",
       category: "management",
       args: [
@@ -368,21 +368,21 @@ function buildChatCommands(): ChatCommandDefinition[] {
     defineChatCommand({
       key: "unfocus",
       nativeName: "unfocus",
-      description: "Remove the current Discord thread binding.",
+      description: "Xóa liên kết luồng Discord hiện tại.",
       textAlias: "/unfocus",
       category: "management",
     }),
     defineChatCommand({
       key: "agents",
       nativeName: "agents",
-      description: "List thread-bound agents for this session.",
+      description: "Liệt kê các tác nhân được liên kết với luồng cho phiên này.",
       textAlias: "/agents",
       category: "management",
     }),
     defineChatCommand({
       key: "kill",
       nativeName: "kill",
-      description: "Kill a running subagent (or all).",
+      description: "Dừng một tác nhân phụ đang chạy (hoặc tất cả).",
       textAlias: "/kill",
       category: "management",
       args: [
@@ -397,7 +397,7 @@ function buildChatCommands(): ChatCommandDefinition[] {
     defineChatCommand({
       key: "steer",
       nativeName: "steer",
-      description: "Send guidance to a running subagent.",
+      description: "Gửi hướng dẫn cho một tác nhân phụ đang chạy.",
       textAlias: "/steer",
       category: "management",
       args: [
@@ -417,7 +417,7 @@ function buildChatCommands(): ChatCommandDefinition[] {
     defineChatCommand({
       key: "config",
       nativeName: "config",
-      description: "Show or set config values.",
+      description: "Hiển thị hoặc đặt các giá trị cấu hình.",
       textAlias: "/config",
       category: "management",
       args: [
@@ -445,7 +445,7 @@ function buildChatCommands(): ChatCommandDefinition[] {
     defineChatCommand({
       key: "debug",
       nativeName: "debug",
-      description: "Set runtime debug overrides.",
+      description: "Đặt ghi đè gỡ lỗi thời gian chạy.",
       textAlias: "/debug",
       category: "management",
       args: [
@@ -473,7 +473,7 @@ function buildChatCommands(): ChatCommandDefinition[] {
     defineChatCommand({
       key: "usage",
       nativeName: "usage",
-      description: "Usage footer or cost summary.",
+      description: "Chân trang sử dụng hoặc tóm tắt chi phí.",
       textAlias: "/usage",
       category: "options",
       args: [
@@ -489,21 +489,21 @@ function buildChatCommands(): ChatCommandDefinition[] {
     defineChatCommand({
       key: "stop",
       nativeName: "stop",
-      description: "Stop the current run.",
+      description: "Dừng lần chạy hiện tại.",
       textAlias: "/stop",
       category: "session",
     }),
     defineChatCommand({
       key: "restart",
       nativeName: "restart",
-      description: "Restart OpenClaw.",
+      description: "Khởi động lại OpenClaw.",
       textAlias: "/restart",
       category: "tools",
     }),
     defineChatCommand({
       key: "activation",
       nativeName: "activation",
-      description: "Set group activation mode.",
+      description: "Đặt chế độ kích hoạt nhóm.",
       textAlias: "/activation",
       category: "management",
       args: [
@@ -519,7 +519,7 @@ function buildChatCommands(): ChatCommandDefinition[] {
     defineChatCommand({
       key: "send",
       nativeName: "send",
-      description: "Set send policy.",
+      description: "Đặt chính sách gửi.",
       textAlias: "/send",
       category: "management",
       args: [
@@ -535,7 +535,7 @@ function buildChatCommands(): ChatCommandDefinition[] {
     defineChatCommand({
       key: "reset",
       nativeName: "reset",
-      description: "Reset the current session.",
+      description: "Đặt lại phiên hiện tại.",
       textAlias: "/reset",
       acceptsArgs: true,
       category: "session",
@@ -543,7 +543,7 @@ function buildChatCommands(): ChatCommandDefinition[] {
     defineChatCommand({
       key: "new",
       nativeName: "new",
-      description: "Start a new session.",
+      description: "Bắt đầu một phiên mới.",
       textAlias: "/new",
       acceptsArgs: true,
       category: "session",
@@ -551,7 +551,7 @@ function buildChatCommands(): ChatCommandDefinition[] {
     defineChatCommand({
       key: "compact",
       nativeName: "compact",
-      description: "Compact the session context.",
+      description: "Nén ngữ cảnh phiên.",
       textAlias: "/compact",
       category: "session",
       args: [
@@ -566,7 +566,7 @@ function buildChatCommands(): ChatCommandDefinition[] {
     defineChatCommand({
       key: "think",
       nativeName: "think",
-      description: "Set thinking level.",
+      description: "Đặt mức độ suy nghĩ.",
       textAlias: "/think",
       category: "options",
       args: [
@@ -582,7 +582,7 @@ function buildChatCommands(): ChatCommandDefinition[] {
     defineChatCommand({
       key: "verbose",
       nativeName: "verbose",
-      description: "Toggle verbose mode.",
+      description: "Chuyển đổi chế độ chi tiết.",
       textAlias: "/verbose",
       category: "options",
       args: [
@@ -598,7 +598,7 @@ function buildChatCommands(): ChatCommandDefinition[] {
     defineChatCommand({
       key: "reasoning",
       nativeName: "reasoning",
-      description: "Toggle reasoning visibility.",
+      description: "Chuyển đổi tính hiển thị của lý luận.",
       textAlias: "/reasoning",
       category: "options",
       args: [
@@ -614,7 +614,7 @@ function buildChatCommands(): ChatCommandDefinition[] {
     defineChatCommand({
       key: "elevated",
       nativeName: "elevated",
-      description: "Toggle elevated mode.",
+      description: "Chuyển đổi chế độ nâng cao.",
       textAlias: "/elevated",
       category: "options",
       args: [
@@ -630,7 +630,7 @@ function buildChatCommands(): ChatCommandDefinition[] {
     defineChatCommand({
       key: "exec",
       nativeName: "exec",
-      description: "Set exec defaults for this session.",
+      description: "Đặt các giá trị mặc định exec cho phiên này.",
       textAlias: "/exec",
       category: "options",
       args: [
@@ -664,7 +664,7 @@ function buildChatCommands(): ChatCommandDefinition[] {
     defineChatCommand({
       key: "model",
       nativeName: "model",
-      description: "Show or set the model.",
+      description: "Hiển thị hoặc đặt mô hình.",
       textAlias: "/model",
       category: "options",
       args: [
@@ -678,7 +678,7 @@ function buildChatCommands(): ChatCommandDefinition[] {
     defineChatCommand({
       key: "models",
       nativeName: "models",
-      description: "List model providers or provider models.",
+      description: "Liệt kê các nhà cung cấp mô hình hoặc các mô hình nhà cung cấp.",
       textAlias: "/models",
       argsParsing: "none",
       acceptsArgs: true,
@@ -687,7 +687,7 @@ function buildChatCommands(): ChatCommandDefinition[] {
     defineChatCommand({
       key: "queue",
       nativeName: "queue",
-      description: "Adjust queue settings.",
+      description: "Điều chỉnh cài đặt hàng đợi.",
       textAlias: "/queue",
       category: "options",
       args: [
@@ -719,7 +719,7 @@ function buildChatCommands(): ChatCommandDefinition[] {
     }),
     defineChatCommand({
       key: "bash",
-      description: "Run host shell commands (host-only).",
+      description: "Chạy các lệnh shell máy chủ (chỉ máy chủ).",
       textAlias: "/bash",
       scope: "text",
       category: "tools",

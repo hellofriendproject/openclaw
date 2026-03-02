@@ -299,4 +299,4 @@ main() {
 }
 
 # Chạy chương trình chính
-main "$@"
+main "$@" 
