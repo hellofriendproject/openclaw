@@ -54,6 +54,13 @@ command_exists() {
     command -v "$1" >/dev/null 2>&1
 }
 
+# đảm bảo có quyền root hoặc sudo để thao tác hệ thống
+if [[ $EUID -ne 0 ]] && ! command_exists sudo; then
+    log_error "Script cần quyền root hoặc sudo."
+    log_error "Hãy chạy lại với 'sudo' hoặc đăng nhập root trước khi gọi curl."
+    exit 1
+fi
+
 # ============================================================================
 # BƯỚC 1: ChuẨN BỊ MÔI TRƯỜNG
 # ============================================================================
@@ -95,11 +102,7 @@ install_dependencies() {
     fi
     
     if [[ $need_install -eq 1 ]]; then
-        if ! command_exists sudo; then
-            log_error "Cần sudo để cài đặt dependencies"
-            exit 1
-        fi
-        
+        # sudo đã được xác nhận ở đầu script, nên chúng ta có thể gọi trực tiếp
         log_info "Cập nhật package manager..."
         sudo apt-get update -qq 2>/dev/null || true
         
