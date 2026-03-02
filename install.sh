@@ -2,10 +2,7 @@
 set -euo pipefail
 
 # 🦞 OpenClaw Installer cho Linux Ubuntu (Tự động 100% từ fork repo)
-# Code sẽ được clone vào thư mục nơi bạn chạy lệnh (ví dụ: `$(pwd)/openclaw`);
-# người dùng có thể mở, sửa nguồn hoặc cấu hình trực tiếp.
-# Kéo lệnh & chạy:
-#   curl -fsSL https://raw.githubusercontent.com/hellofriendproject/openclaw/refs/heads/main/install.sh | bash
+# Cách sử dụng: curl -fsSL https://raw.githubusercontent.com/hellofriendproject/openclaw/refs/heads/main/install.sh | bash
 
 # Mã màu
 RED='\033[0;31m'
@@ -17,9 +14,7 @@ NC='\033[0m'
 
 # Cấu hình
 REPO_URL="https://github.com/hellofriendproject/openclaw.git"
-# cài vào thư mục hiện tại (mặc định); người dùng có thể ghi đè
-# bằng biến môi trường OPENCLAW_INSTALL_DIR
-INSTALL_DIR="${OPENCLAW_INSTALL_DIR:-$PWD/openclaw}"
+INSTALL_DIR="${HOME}/.local/share/openclaw"
 BIN_DIR="${HOME}/.local/bin"
 GATEWAY_PORT=18789
 
@@ -53,13 +48,6 @@ log_step() {
 command_exists() {
     command -v "$1" >/dev/null 2>&1
 }
-
-# đảm bảo có quyền root hoặc sudo để thao tác hệ thống
-if [[ $EUID -ne 0 ]] && ! command_exists sudo; then
-    log_error "Script cần quyền root hoặc sudo."
-    log_error "Hãy chạy lại với 'sudo' hoặc đăng nhập root trước khi gọi curl."
-    exit 1
-fi
 
 # ============================================================================
 # BƯỚC 1: ChuẨN BỊ MÔI TRƯỜNG
@@ -102,7 +90,11 @@ install_dependencies() {
     fi
     
     if [[ $need_install -eq 1 ]]; then
-        # sudo đã được xác nhận ở đầu script, nên chúng ta có thể gọi trực tiếp
+        if ! command_exists sudo; then
+            log_error "Cần sudo để cài đặt dependencies"
+            exit 1
+        fi
+        
         log_info "Cập nhật package manager..."
         sudo apt-get update -qq 2>/dev/null || true
         
@@ -322,30 +314,14 @@ setup_onboarding() {
     
     if pnpm openclaw onboard --install-daemon; then
         log_success "Onboarding hoàn tất"
-        return 0
     else
         log_warn "Onboarding gặp lỗi nhưng OpenClaw vẫn được cài"
-        # Lỗi phổ biến: wizard sẽ cố đặt plugins.slots.memory="memory-core"
-        # dù plugin chưa được cài, dẫn tới "plugin not found" như bạn thấy.
-        # Chúng ta xoá luôn cấu hình đó để tránh lỗi tái diễn.
-        log_info "Đang dọn dẹp cấu hình cũ (plugins.slots.memory) nếu có..."
-        openclaw config unset plugins.slots.memory >/dev/null 2>&1 || true
-        log_warn "Nếu bạn cần tính năng memory, cài plugin tương ứng trước khi chạy lại onboarding."
-        return 1
     fi
 }
 
 # ============================================================================
 # BƯỚC 10: KHỞI ĐỘNG GATEWAY
 # ============================================================================
-
-# return 0 if user has configured gateway.mode (non‑empty), 1 otherwise
-gateway_configured() {
-    # avoid error output if config command fails
-    local mode
-    mode=$(openclaw config get gateway.mode 2>/dev/null || true)
-    [[ -n "$mode" ]]
-}
 
 start_gateway() {
     log_step "BƯỚC 9: Khởi động Gateway"
@@ -367,8 +343,16 @@ start_gateway() {
 
 main() {
     clear
-
-    echo -e "${GREEN}🦞 OpenClaw Installer — Ubuntu/Debian (tự động)${NC}"
+    
+    echo -e "${GREEN}"
+    cat <<'EOF'
+    ╭━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╮
+    │      🦞 OpenClaw Installer v1.0         │
+    │   Tự động cài đặt từ fork repo          │
+    │     (100% automation - chỉ confirm)     │
+    ╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯
+EOF
+    echo -e "${NC}"
     
     log_info "Repository: $REPO_URL"
     log_info "Cài đặt tại: $INSTALL_DIR"
@@ -391,18 +375,8 @@ main() {
     build_project
     create_wrapper
     update_path
-
-    # Chạy onboarding (tương tác). KHÔNG tự động khởi động gateway.
-    # Người dùng sẽ khởi động gateway thủ công sau khi xác nhận settings.
-    if setup_onboarding; then
-        log_success "Onboarding hoàn tất"
-        echo ""
-        echo -e "${GREEN}🎉 Onboarding xong.${NC} Khởi động gateway thủ công:"
-        echo -e "  ${CYAN}pnpm openclaw gateway --port $GATEWAY_PORT${NC}  (hoặc ${CYAN}openclaw gateway --port $GATEWAY_PORT${NC})"
-        echo ""
-    else
-        log_warn "Onboarding chưa hoàn tất; chạy lại khi sẵn sàng: ${CYAN}pnpm openclaw onboard --install-daemon${NC}"
-    fi
+    setup_onboarding
+    start_gateway
     
     echo ""
     echo -e "${GREEN}✓ Cài đặt hoàn tất!${NC}"
@@ -410,4 +384,4 @@ main() {
 }
 
 # Chạy main
-main "$@" 
+main "$@"
