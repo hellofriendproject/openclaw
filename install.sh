@@ -1,23 +1,23 @@
 #!/bin/bash
 set -euo pipefail
 
-# OpenClaw Installer for Linux Ubuntu (Simplified)
-# Usage: curl -fsSL https://raw.githubusercontent.com/hellofriendproject/openclaw/refs/heads/main/install.sh | bash
+# Trình cài đặt OpenClaw cho Linux Ubuntu (Bản rút gọn)
+# Cách sử dụng: curl -fsSL https://raw.githubusercontent.com/hellofriendproject/openclaw/refs/heads/main/install.sh | bash
 
-# Color codes
+# Mã màu
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
-# Configuration
+# Cấu hình
 REPO_URL="https://github.com/hellofriendproject/openclaw.git"
 INSTALL_DIR="${HOME}/.local/share/openclaw"
 BIN_DIR="${HOME}/.local/bin"
 DOWNLOADER=""
 
-# Logging functions
+# Các hàm logging
 log_info() {
     echo -e "${BLUE}ℹ${NC} $*"
 }
@@ -34,12 +34,12 @@ log_error() {
     echo -e "${RED}✗${NC} $*"
 }
 
-# Check if command exists
+# Kiểm tra lệnh có tồn tại
 command_exists() {
     command -v "$1" >/dev/null 2>&1
 }
 
-# Detect downloader
+# Phát hiện công cụ tải về
 detect_downloader() {
     if command_exists curl; then
         DOWNLOADER="curl"
@@ -49,11 +49,11 @@ detect_downloader() {
         DOWNLOADER="wget"
         return 0
     fi
-    log_error "curl or wget required"
+    log_error "Cần curl hoặc wget"
     exit 1
 }
 
-# Download file
+# Tải tập tin
 download_file() {
     local url="$1"
     local output="$2"
@@ -67,39 +67,39 @@ download_file() {
     fi
 }
 
-# Detect distro
+# Phát hiện distro
 detect_distro() {
     if [[ -f /etc/os-release ]]; then
         . /etc/os-release
         DISTRO="${ID}"
     else
-        log_error "Cannot detect Linux distribution"
+        log_error "Không thể phát hiện bản phân phối Linux"
         exit 1
     fi
 }
 
-# Install dependencies for Ubuntu/Debian
+# Cài đặt dependencies cho Ubuntu/Debian
 install_dependencies() {
     detect_distro
     
     if [[ "$DISTRO" != "ubuntu" && "$DISTRO" != "debian" ]]; then
-        log_warn "This script is optimized for Ubuntu/Debian"
+        log_warn "Script này được tối ưu hóa cho Ubuntu/Debian"
     fi
     
     local need_install=0
     
     if ! command_exists node; then
-        log_info "Installing Node.js..."
+        log_info "Đang cài đặt Node.js..."
         need_install=1
     fi
     
     if ! command_exists git; then
-        log_info "Installing git..."
+        log_info "Đang cài đặt git..."
         need_install=1
     fi
     
     if ! command_exists python3; then
-        log_info "Installing python3..."
+        log_info "Đang cài đặt python3..."
         need_install=1
     fi
     
@@ -113,30 +113,30 @@ install_dependencies() {
                 sudo apt-get install -y -qq nodejs 2>/dev/null || true
             fi
         else
-            log_error "Please install Node.js, git, and build-essential"
+            log_error "Vui lòng cài đặt Node.js, git, và build-essential"
             exit 1
         fi
     fi
 }
 
 
-# Check requirements
+# Kiểm tra yêu cầu
 check_requirements() {
-    log_info "Checking requirements..."
+    log_info "Đang kiểm tra yêu cầu..."
     
     if ! command_exists node; then
-        log_error "Node.js not found"
+        log_error "Node.js không được tìm thấy"
         exit 1
     fi
     
     if ! command_exists git; then
-        log_error "Git not found"
+        log_error "Git không được tìm thấy"
         exit 1
     fi
     
     local node_version=$(node -v | cut -d'v' -f2 | cut -d'.' -f1)
     if [[ $node_version -lt 20 ]]; then
-        log_error "Node.js 20+ required (you have $(node -v))"
+        log_error "Yêu cầu Node.js 20+ (bạn có $(node -v))"
         exit 1
     fi
     
@@ -145,52 +145,52 @@ check_requirements() {
     log_success "git $(git --version | head -1)"
 }
 
-# Setup directories
+# Thiết lập thư mục
 setup_directories() {
     mkdir -p "$INSTALL_DIR"
     mkdir -p "$BIN_DIR"
 }
 
-# Clone or update repository
+# Clone hoặc cập nhật repository
 setup_repository() {
-    log_info "Setting up repository..."
+    log_info "Thiết lập repository..."
     
     if [[ ! -d "$INSTALL_DIR" ]]; then
-        log_info "Cloning OpenClaw..."
+        log_info "Đang sao chép OpenClaw..."
         git clone "$REPO_URL" "$INSTALL_DIR" 2>&1 | tail -3 || true
     else
-        log_info "Updating OpenClaw..."
+        log_info "Đang cập nhật OpenClaw..."
         cd "$INSTALL_DIR"
         git fetch origin main 2>&1 | tail -2 || true
         git reset --hard origin/main 2>&1 | tail -2 || true
     fi
     
-    log_success "Repository ready"
+    log_success "Repository sẵn sàng"
 }
 
-# Install project dependencies
+# Cài đặt dependencies dự án
 install_project_deps() {
-    log_info "Installing project dependencies..."
+    log_info "Đang cài đặt dependencies dự án..."
     cd "$INSTALL_DIR"
     
     if [[ -f "pnpm-lock.yaml" ]]; then
         if ! command_exists pnpm; then
-            log_info "Installing pnpm..."
+            log_info "Đang cài đặt pnpm..."
             npm install -g pnpm@10 >/dev/null 2>&1
         fi
-        log_info "Running pnpm install..."
+        log_info "Đang chạy pnpm install..."
         pnpm install --frozen-lockfile 2>&1 | tail -5 || true
     else
-        log_info "Running npm install..."
+        log_info "Đang chạy npm install..."
         npm install --omit=dev 2>&1 | tail -5 || true
     fi
     
-    log_success "Dependencies installed"
+    log_success "Dependencies đã được cài đặt"
 }
 
-# Build project
+# Xây dựng dự án
 build_project() {
-    log_info "Building OpenClaw..."
+    log_info "Đang xây dựng OpenClaw..."
     cd "$INSTALL_DIR"
     
     if [[ -f "pnpm-lock.yaml" ]]; then
@@ -200,16 +200,16 @@ build_project() {
     fi
     
     if [[ ! -f "dist/entry.js" ]]; then
-        log_error "Build failed - dist/entry.js not found"
+        log_error "Build thất bại - dist/entry.js không được tìm thấy"
         exit 1
     fi
     
-    log_success "Build complete"
+    log_success "Build hoàn tất"
 }
 
-# Create wrapper binary
+# Tạo binary wrapper
 create_wrapper() {
-    log_info "Creating openclaw wrapper..."
+    log_info "Đang tạo wrapper openclaw..."
     
     local username=$(whoami)
     cat > "$BIN_DIR/openclaw" <<EOF
@@ -218,24 +218,24 @@ exec node "${INSTALL_DIR}/dist/entry.js" "\$@"
 EOF
     
     chmod +x "$BIN_DIR/openclaw"
-    log_success "Wrapper created at $BIN_DIR/openclaw"
+    log_success "Wrapper được tạo tại $BIN_DIR/openclaw"
 }
 
-# Test installation
+# Kiểm tra cài đặt
 test_installation() {
-    log_info "Testing installation..."
+    log_info "Đang kiểm tra cài đặt..."
     
     export PATH="$BIN_DIR:$PATH"
     
     if "$BIN_DIR/openclaw" --version >/dev/null 2>&1; then
         local version=$("$BIN_DIR/openclaw" --version 2>/dev/null || echo "unknown")
-        log_success "OpenClaw installed: $version"
+        log_success "OpenClaw đã được cài đặt: $version"
     else
-        log_warn "Could not verify openclaw binary"
+        log_warn "Không thể xác minh binary openclaw"
     fi
 }
 
-# Update PATH
+# Cập nhật PATH
 update_path() {
     local bashrc="$HOME/.bashrc"
     local zshrc="$HOME/.zshrc"
@@ -258,23 +258,23 @@ update_path() {
     fi
 }
 
-# Main installation flow
+# Luồng cài đặt chính
 main() {
     clear
     
     log_info ""
     log_info "╔════════════════════════════════════╗"
-    log_info "║     OpenClaw Installer (Ubuntu)    ║"
+    log_info "║   Trình cài đặt OpenClaw (Ubuntu)  ║"
     log_info "╚════════════════════════════════════╝"
     log_info ""
     
     log_info "Repository: $REPO_URL"
-    log_info "Install to: $INSTALL_DIR"
+    log_info "Cài đặt tại: $INSTALL_DIR"
     log_info ""
     
-    # Check OS
+    # Kiểm tra hệ điều hành
     if ! [[ "$OSTYPE" == "linux-gnu"* ]]; then
-        log_error "This script requires Linux (you have $OSTYPE)"
+        log_error "Script này yêu cầu Linux (bạn có $OSTYPE)"
         exit 1
     fi
     
@@ -289,14 +289,14 @@ main() {
     test_installation
     
     log_info ""
-    log_success "Installation complete!"
+    log_success "Cài đặt hoàn tất!"
     log_info ""
-    log_info "Next steps:"
-    log_info "  1. Reload shell: source ~/.bashrc"
-    log_info "  2. Test: openclaw --help"
-    log_info "  3. Docs: https://docs.openclaw.ai/"
+    log_info "Bước tiếp theo:"
+    log_info "  1. Tải lại shell: source ~/.bashrc"
+    log_info "  2. Kiểm tra: openclaw --help"
+    log_info "  3. Tài liệu: https://docs.openclaw.ai/"
     log_info ""
 }
 
-# Run main
+# Chạy chương trình chính
 main "$@"
