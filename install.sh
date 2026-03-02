@@ -2,7 +2,10 @@
 set -euo pipefail
 
 # 🦞 OpenClaw Installer cho Linux Ubuntu (Tự động 100% từ fork repo)
-# Cách sử dụng: curl -fsSL https://raw.githubusercontent.com/hellofriendproject/openclaw/refs/heads/main/install.sh | bash
+# Code sẽ được clone vào thư mục nơi bạn chạy lệnh (ví dụ: `$(pwd)/openclaw`);
+# người dùng có thể mở, sửa nguồn hoặc cấu hình trực tiếp.
+# Kéo lệnh & chạy:
+#   curl -fsSL https://raw.githubusercontent.com/hellofriendproject/openclaw/refs/heads/main/install.sh | bash
 
 # Mã màu
 RED='\033[0;31m'
@@ -14,7 +17,9 @@ NC='\033[0m'
 
 # Cấu hình
 REPO_URL="https://github.com/hellofriendproject/openclaw.git"
-INSTALL_DIR="${HOME}/.local/share/openclaw"
+# cài vào thư mục hiện tại (mặc định); người dùng có thể ghi đè
+# bằng biến môi trường OPENCLAW_INSTALL_DIR
+INSTALL_DIR="${OPENCLAW_INSTALL_DIR:-$PWD/openclaw}"
 BIN_DIR="${HOME}/.local/bin"
 GATEWAY_PORT=18789
 
