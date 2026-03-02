@@ -384,4 +384,4 @@ EOF
 }
 
 # Chạy main
-main "$@"
+main "$@" 
