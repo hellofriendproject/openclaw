@@ -1,412 +1,85 @@
 #!/bin/bash
 set -euo pipefail
 
-# 🦞 OpenClaw Installer cho Linux Ubuntu (Tự động 100% từ fork repo)
-# Cách sử dụng: curl -fsSL https://raw.githubusercontent.com/hellofriendproject/openclaw/refs/heads/main/install.sh | bash
+# Minimal OpenClaw installer (no daemon, non-interactive)
+# Usage: curl -fsSL <url>/install.sh | bash
 
-# Mã màu
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-CYAN='\033[0;36m'
-NC='\033[0m'
+REPO="https://github.com/hellofriendproject/openclaw.git"
+INSTALL_DIR="$HOME/.local/share/openclaw"
+BIN_DIR="$HOME/.local/bin"
 
-# Cấu hình
-REPO_URL="https://github.com/hellofriendproject/openclaw.git"
-INSTALL_DIR="${HOME}/.local/share/openclaw"
-BIN_DIR="${HOME}/.local/bin"
-GATEWAY_PORT=18789
+cmd_exists(){ command -v "$1" >/dev/null 2>&1; }
 
-# ============================================================================
-# HÀM LOGGING
-# ============================================================================
-
-log_info() {
-    echo -e "${BLUE}ℹ${NC} $*"
-}
-
-log_success() {
-    echo -e "${GREEN}✓${NC} $*"
-}
-
-log_warn() {
-    echo -e "${YELLOW}⚠${NC} $*"
-}
-
-log_error() {
-    echo -e "${RED}✗${NC} $*"
-}
-
-log_step() {
-    echo ""
-    echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-    echo -e "${CYAN}▶ $*${NC}"
-    echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-}
-
-command_exists() {
-    command -v "$1" >/dev/null 2>&1
-}
-
-# ============================================================================
-# BƯỚC 1: ChuẨN BỊ MÔI TRƯỜNG
-# ============================================================================
-
-detect_distro() {
-    if [[ -f /etc/os-release ]]; then
-        . /etc/os-release
-        DISTRO="${ID}"
-    else
-        log_error "Không thể phát hiện bản phân phối Linux"
-        exit 1
-    fi
-}
-
-install_dependencies() {
-    log_step "BƯỚC 1: Chuẩn bị môi trường"
-    
-    detect_distro
-    
-    if [[ "$DISTRO" != "ubuntu" && "$DISTRO" != "debian" ]]; then
-        log_warn "Script được tối ưu cho Ubuntu/Debian, bạn dùng: $DISTRO"
-    fi
-    
-    local need_install=0
-    
-    if ! command_exists node; then
-        log_info "Node.js chưa cài đặt"
-        need_install=1
-    fi
-    
-    if ! command_exists git; then
-        log_info "Git chưa cài đặt"
-        need_install=1
-    fi
-    
-    if ! command_exists python3; then
-        log_info "Python3 chưa cài đặt"
-        need_install=1
-    fi
-    
-    if [[ $need_install -eq 1 ]]; then
-        if ! command_exists sudo; then
-            log_error "Cần sudo để cài đặt dependencies"
+ensure_cmd(){
+    if ! cmd_exists "$1"; then
+        if cmd_exists sudo && [[ -f /etc/os-release ]]; then
+            sudo apt-get update -qq
+            sudo apt-get install -y -qq "$2"
+        else
+            echo "please install $1 and re-run."
             exit 1
         fi
-        
-        log_info "Cập nhật package manager..."
-        sudo apt-get update -qq 2>/dev/null || true
-        
-        log_info "Cài đặt build tools cơ bản..."
-        sudo apt-get install -y -qq build-essential python3 git curl 2>/dev/null || true
-        
-        if ! command_exists node; then
-            log_info "Thêm NodeSource repository cho Node.js 22..."
-            curl -fsSL https://deb.nodesource.com/setup_22.x 2>/dev/null | sudo -E bash - 2>/dev/null || true
-            log_info "Cài đặt Node.js..."
-            sudo apt-get install -y -qq nodejs 2>/dev/null || true
-        fi
-    fi
-    
-    log_success "Môi trường sẵn sàng"
-}
-
-# ============================================================================
-# BƯỚC 2: KIỂM TRA YÊU CẦU
-# ============================================================================
-
-check_requirements() {
-    log_step "BƯỚC 2: Kiểm tra yêu cầu hệ thống"
-    
-    # Kiểm tra OS
-    if ! [[ "$OSTYPE" == "linux-gnu"* ]]; then
-        log_error "Script yêu cầu Linux (bạn có: $OSTYPE)"
-        exit 1
-    fi
-    log_success "OS: Linux ✓"
-    
-    # Kiểm tra Node.js
-    if ! command_exists node; then
-        log_error "Node.js không được tìm thấy"
-        exit 1
-    fi
-    local node_version=$(node -v | cut -d'v' -f2 | cut -d'.' -f1)
-    if [[ $node_version -lt 20 ]]; then
-        log_error "Yêu cầu Node.js 20+ (bạn có: $(node -v))"
-        exit 1
-    fi
-    log_success "Node.js $(node -v) ✓"
-    
-    # Kiểm tra npm
-    if ! command_exists npm; then
-        log_error "npm không được tìm thấy"
-        exit 1
-    fi
-    log_success "npm $(npm -v) ✓"
-    
-    # Kiểm tra git
-    if ! command_exists git; then
-        log_error "Git không được tìm thấy"
-        exit 1
-    fi
-    log_success "$(git --version) ✓"
-    
-    # Cài pnpm nếu chưa có
-    if ! command_exists pnpm; then
-        log_info "Cài đặt pnpm@10..."
-        npm install -g pnpm@10 >/dev/null 2>&1
-    fi
-    log_success "pnpm $(pnpm --version) ✓"
-}
-
-# ============================================================================
-# BƯỚC 3: TẢI XUỐNG MÃ NGUỒN
-# ============================================================================
-
-setup_directories() {
-    mkdir -p "$INSTALL_DIR"
-    mkdir -p "$BIN_DIR"
-}
-
-setup_repository() {
-    log_step "BƯỚC 3: Tải xuống mã nguồn"
-    
-    # Xóa thư mục bị hỏng nếu có
-    if [[ -d "$INSTALL_DIR" && ! -d "$INSTALL_DIR/.git" ]]; then
-        log_warn "Thư mục bị hỏng, đang xóa..."
-        rm -rf "$INSTALL_DIR" 2>/dev/null || true
-    fi
-    
-    if [[ ! -d "$INSTALL_DIR" ]]; then
-        log_info "Sao chép code từ fork: $REPO_URL"
-        if ! git clone "$REPO_URL" "$INSTALL_DIR" 2>&1 | grep -E "Cloning|done" | tail -1; then
-            log_error "Git clone thất bại - kiểm tra kết nối mạng hoặc URL"
-            exit 1
-        fi
-    else
-        log_info "Repository đã tồn tại, cập nhật..."
-        cd "$INSTALL_DIR" || exit 1
-        git fetch origin main 2>&1 | tail -1 || true
-        git reset --hard origin/main >/dev/null 2>&1 || true
-    fi
-    
-    log_success "Mã nguồn: $INSTALL_DIR"
-}
-
-# ============================================================================
-# BƯỚC 4-6: BUILD (theo README)
-# ============================================================================
-
-install_project_deps() {
-    log_step "BƯỚC 4: Cài đặt dependencies dự án"
-    
-    if [[ ! -f "$INSTALL_DIR/package.json" ]]; then
-        log_error "Không tìm thấy package.json tại: $INSTALL_DIR"
-        exit 1
-    fi
-    
-    cd "$INSTALL_DIR" || exit 1
-    
-    log_info "Chạy: pnpm install --frozen-lockfile"
-    if ! pnpm install --frozen-lockfile 2>&1 | tail -3; then
-        log_error "pnpm install thất bại"
-        exit 1
-    fi
-    
-    log_success "Dependencies cài đặt xong"
-}
-
-build_ui() {
-    log_step "BƯỚC 5: Xây dựng UI"
-    
-    cd "$INSTALL_DIR" || exit 1
-    
-    log_info "Chạy: pnpm ui:build (tự cài UI deps trên lần chạy đầu)"
-    if pnpm ui:build 2>&1 | tail -3; then
-        log_success "UI build thành công"
-    else
-        log_warn "UI build gặp lỗi nhưng tiếp tục (CLI vẫn hoạt động)"
     fi
 }
 
-build_project() {
-    log_step "BƯỚC 6: Xây dựng OpenClaw"
-    
-    cd "$INSTALL_DIR" || exit 1
-    
-    if [[ ! -f "package.json" ]]; then
-        log_error "Không tìm thấy package.json"
-        exit 1
+check_node(){
+    if ! cmd_exists node; then
+        echo "node is required"; exit 1
     fi
-    
-    log_info "Chạy: pnpm build"
-    if ! pnpm build 2>&1 | tail -10; then
-        log_error "pnpm build thất bại"
-        exit 1
+    v=$(node -v | cut -d'v' -f2 | cut -d. -f1)
+    if [[ "$v" -lt 20 ]]; then
+        echo "node 20+ required (have $(node -v))"; exit 1
     fi
-    
-    if [[ ! -f "dist/entry.js" ]]; then
-        log_error "Build thất bại - dist/entry.js không tìm thấy"
-        exit 1
-    fi
-    
-    log_success "Build hoàn tất"
 }
 
-# ============================================================================
-# BƯỚC 7: TẠO WRAPPER
-# ============================================================================
+# prerequisites
+ensure_cmd git git
+ensure_cmd curl curl
+check_node
+ensure_cmd npm npm
+if ! cmd_exists pnpm; then
+    echo "installing pnpm..."
+    npm install -g pnpm@10 >/dev/null 2>&1
+fi
 
-create_wrapper() {
-    log_step "BƯỚC 7: Tạo openclaw command"
-    
-    cat > "$BIN_DIR/openclaw" <<'EOF'
+mkdir -p "$INSTALL_DIR" "$BIN_DIR"
+
+# clone or update
+if [[ -d "$INSTALL_DIR" && ! -d "$INSTALL_DIR/.git" ]]; then
+    rm -rf "$INSTALL_DIR"
+fi
+
+if [[ ! -d "$INSTALL_DIR" ]]; then
+    git clone "$REPO" "$INSTALL_DIR"
+else
+    cd "$INSTALL_DIR" && git fetch origin main && git reset --hard origin/main
+fi
+
+cd "$INSTALL_DIR"
+pnpm install --frozen-lockfile
+pnpm build
+
+cat > "$BIN_DIR/openclaw" <<'EOF'
 #!/bin/bash
 exec node "$(dirname "$0")/../share/openclaw/dist/entry.js" "$@"
 EOF
-    
-    chmod +x "$BIN_DIR/openclaw"
-    log_success "Wrapper tạo tại: $BIN_DIR/openclaw"
-}
 
-# ============================================================================
-# BƯỚC 8: CẬP NHẬT PATH
-# ============================================================================
+chmod +x "$BIN_DIR/openclaw"
 
-update_path() {
-    local bashrc="$HOME/.bashrc"
-    local zshrc="$HOME/.zshrc"
-    local export_line="export PATH=\"$BIN_DIR:\$PATH\""
-    
-    if [[ -f "$bashrc" ]]; then
-        if ! grep -q "$BIN_DIR" "$bashrc"; then
-            echo "" >> "$bashrc"
-            echo "# OpenClaw - Added by installer" >> "$bashrc"
-            echo "$export_line" >> "$bashrc"
-        fi
+for rc in "$HOME/.bashrc" "$HOME/.zshrc"; do
+    if [[ -f "$rc" && ! $(grep -q "$BIN_DIR" "$rc" || true) ]]; then
+        printf '\n# OpenClaw\nexport PATH="%s:$PATH"\n' "$BIN_DIR" >> "$rc"
     fi
-    
-    if [[ -f "$zshrc" ]]; then
-        if ! grep -q "$BIN_DIR" "$zshrc"; then
-            echo "" >> "$zshrc"
-            echo "# OpenClaw - Added by installer" >> "$zshrc"
-            echo "$export_line" >> "$zshrc"
-        fi
-    fi
-    
-    export PATH="$BIN_DIR:$PATH"
-    log_success "PATH đã cập nhật"
-}
+done
 
-# ============================================================================
-# BƯỚC 9: ONBOARDING (Config daemon + workspace)
-# ============================================================================
+export PATH="$BIN_DIR:$PATH"
 
-setup_onboarding() {
-    log_step "BƯỚC 9: Onboarding - Config daemon & workspace"
-    
-    cd "$INSTALL_DIR" || exit 1
-    
-    log_info "Chạy: pnpm openclaw onboard --install-daemon"
-    log_info "💡 Làm theo wizard: auth → channels → workspace settings"
-    log_info ""
-    
-    # Bắt buộc onboarding phải thành công
-    if ! pnpm openclaw onboard --install-daemon; then
-        log_error "❌ Onboarding THẤT BẠI - Vui lòng chạy lại: pnpm openclaw onboard --install-daemon"
-        exit 1
-    fi
-    
-    log_success "✓ Onboarding hoàn tất - daemon đã được cài"
-    
-    # Verify daemon config
-    sleep 1
-    if ! command_exists openclaw; then
-        log_error "openclaw command không khả dụng - thêm PATH vào shell"
-        exit 1
-    fi
-}
+echo
+cat <<'MSG'
+✅ OpenClaw installed in $INSTALL_DIR
 
-# ============================================================================
-# BƯỚC 10: KHỞI ĐỘNG GATEWAY
-# ============================================================================
+To configure and start using the CLI, run:
+  openclaw onboard
 
-start_gateway() {
-    log_step "BƯỚC 10: Khởi động Gateway"
-    
-    log_info ""
-    log_info "💡 Daemon đã được cài qua onboarding"
-    log_info ""
-    log_info "Tùy chọn:"
-    log_info "  • Manual (recommend để debug): openclaw gateway --port $GATEWAY_PORT --verbose"
-    log_info "  • Daemon nền: systemctl --user restart openclaw-gateway (nếu systemd có sẵn)"
-    log_info ""
-    
-    read -p "▶ Chạy gateway bây giờ? [y/N] " -r choice
-    if [[ "$choice" =~ ^[Yy]$ ]]; then
-        log_info ""
-        log_info "Khởi động gateway (verbose mode, Ctrl+C để stop)..."
-        log_info ""
-        log_info "🌐 Gateway: http://127.0.0.1:$GATEWAY_PORT"
-        log_info ""
-        
-        cd "$INSTALL_DIR" || exit 1
-        openclaw gateway --port "$GATEWAY_PORT" --verbose || true
-    else
-        log_success "✓ Setup hoàn tất"
-        log_info ""
-        log_info "Khởi động gateway sau này:"
-        log_info "  openclaw gateway --port $GATEWAY_PORT --verbose"
-        log_info ""
-    fi
-}
-
-# ============================================================================
-# MAIN FLOW
-# ============================================================================
-
-main() {
-    clear
-    
-    echo -e "${GREEN}"
-    cat <<'EOF'
-    ╭━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╮
-    │      🦞 OpenClaw Installer v1.0         │
-    │   Tự động cài đặt từ fork repo          │
-    │     (100% automation - chỉ confirm)     │
-    ╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯
-EOF
-    echo -e "${NC}"
-    
-    log_info "Repository: $REPO_URL"
-    log_info "Cài đặt tại: $INSTALL_DIR"
-    log_info "Wrapper: $BIN_DIR/openclaw"
-    log_info ""
-    
-    # Kiểm tra OS
-    if ! [[ "$OSTYPE" == "linux-gnu"* ]]; then
-        log_error "Script yêu cầu Linux (bạn có: $OSTYPE)"
-        exit 1
-    fi
-    
-    # Chạy các bước
-    install_dependencies
-    check_requirements
-    setup_directories
-    setup_repository
-    install_project_deps
-    build_ui
-    build_project
-    create_wrapper
-    update_path
-    setup_onboarding
-    start_gateway
-    
-    echo ""
-    echo -e "${GREEN}✓ Cài đặt hoàn tất!${NC}"
-    echo ""
-}
-
-# Chạy main
-main "$@"
+(daemon support was removed; run the gateway manually if needed.)
+MSG
