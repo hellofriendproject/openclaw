@@ -300,22 +300,31 @@ update_path() {
 }
 
 # ============================================================================
-# BƯỚC 9: TẠO ONBOARDING (Tự động setup daemon + gateway)
+# BƯỚC 9: ONBOARDING (Config daemon + workspace)
 # ============================================================================
 
 setup_onboarding() {
-    log_step "BƯỚC 8: Setup anh-onboarding (daemon + gateway)"
+    log_step "BƯỚC 9: Onboarding - Config daemon & workspace"
     
     cd "$INSTALL_DIR" || exit 1
     
     log_info "Chạy: pnpm openclaw onboard --install-daemon"
-    log_info "💡 Hướng dẫn: Làm theo các bước onboarding, xác nhận settings"
+    log_info "💡 Làm theo wizard: auth → channels → workspace settings"
     log_info ""
     
-    if pnpm openclaw onboard --install-daemon; then
-        log_success "Onboarding hoàn tất"
-    else
-        log_warn "Onboarding gặp lỗi nhưng OpenClaw vẫn được cài"
+    # Bắt buộc onboarding phải thành công
+    if ! pnpm openclaw onboard --install-daemon; then
+        log_error "❌ Onboarding THẤT BẠI - Vui lòng chạy lại: pnpm openclaw onboard --install-daemon"
+        exit 1
+    fi
+    
+    log_success "✓ Onboarding hoàn tất - daemon đã được cài"
+    
+    # Verify daemon config
+    sleep 1
+    if ! command_exists openclaw; then
+        log_error "openclaw command không khả dụng - thêm PATH vào shell"
+        exit 1
     fi
 }
 
@@ -324,17 +333,33 @@ setup_onboarding() {
 # ============================================================================
 
 start_gateway() {
-    log_step "BƯỚC 9: Khởi động Gateway"
+    log_step "BƯỚC 10: Khởi động Gateway"
     
-    sleep 2
-    
-    log_info "Chạy: openclaw gateway --port $GATEWAY_PORT"
     log_info ""
-    log_info "💡 Gateway đang chạy tại: http://127.0.0.1:$GATEWAY_PORT"
-    log_info "   (Nếu từ remote, dùng SSH tunnel: ssh -N -L $GATEWAY_PORT:127.0.0.1:$GATEWAY_PORT user@host)"
+    log_info "💡 Daemon đã được cài qua onboarding"
+    log_info ""
+    log_info "Tùy chọn:"
+    log_info "  • Manual (recommend để debug): openclaw gateway --port $GATEWAY_PORT --verbose"
+    log_info "  • Daemon nền: systemctl --user restart openclaw-gateway (nếu systemd có sẵn)"
     log_info ""
     
-    openclaw gateway --port "$GATEWAY_PORT" --verbose || true
+    read -p "▶ Chạy gateway bây giờ? [y/N] " -r choice
+    if [[ "$choice" =~ ^[Yy]$ ]]; then
+        log_info ""
+        log_info "Khởi động gateway (verbose mode, Ctrl+C để stop)..."
+        log_info ""
+        log_info "🌐 Gateway: http://127.0.0.1:$GATEWAY_PORT"
+        log_info ""
+        
+        cd "$INSTALL_DIR" || exit 1
+        openclaw gateway --port "$GATEWAY_PORT" --verbose || true
+    else
+        log_success "✓ Setup hoàn tất"
+        log_info ""
+        log_info "Khởi động gateway sau này:"
+        log_info "  openclaw gateway --port $GATEWAY_PORT --verbose"
+        log_info ""
+    fi
 }
 
 # ============================================================================
