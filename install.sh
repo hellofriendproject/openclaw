@@ -11,5 +11,5 @@ cd "$I" && pnpm i --frozen-lockfile && pnpm build
 printf "#!/bin/bash\nexec node $I/dist/entry.js \"\$@\"" > "$B/openclaw" && chmod +x "$B/openclaw"
 for f in "$HOME/.bashrc" "$HOME/.zshrc"; do [[ -f $f ]] && ! grep -q "$B" "$f" && echo "export PATH=\"$B:\$PATH\"" >> "$f"; done
 export PATH="$B:$PATH"
-echo -e "\n🛠️  Đang thiết lập (onboard), làm theo hướng dẫn..." && "$B/openclaw" onboard
-echo -e "\n🚀 Đang chạy gateway tại cổng 18789..." && "$B/openclaw" gateway --port 18789 --verbose
+echo -e "\n🛠️ Setup..." && sleep 1 && "$B/openclaw" onboard
+echo -e "\n🚀 Run..." && exec "$B/openclaw" gateway
